@@ -1,0 +1,108 @@
+#1) Batch extraction of key parameters in PDF format
+from PyPDF2 import PdfReader
+import pandas as pd
+import os
+
+# Function: Extract text from a PDF
+def get_pdf_text(file_path):
+    # Read and return the content of the PDF
+    pass
+
+# Directory path
+directory_path = 'your_directory_path_here'
+
+# Set API key  
+os.environ["OPENAI_API_KEY"] = "your_api_key_here"
+
+# Initialize DataFrame
+df = pd.DataFrame(columns=['PDF File', 'Experimental Section', 'Electrochemical Measurements'])
+
+# Iterate through PDF files in the directory
+for filename in os.listdir(directory_path):
+    if filename.endswith(".pdf"):
+        # Extract PDF text
+        pdf_text = get_pdf_text(file_path)
+
+        # Use OpenAI API to extract summaries for the experimental section and electrochemical measurements
+        experimental_summary = "summary_of_experimental_section"
+        electrochemical_summary = "summary_of_electrochemical_measurements"
+
+        # Append the results to the DataFrame
+        df = df.append({
+            'PDF File': filename,
+            'Experimental Section': experimental_summary,
+            'Electrochemical Measurements': electrochemical_summary
+        }, ignore_index=True)
+
+# Export DataFrame to an Excel file
+df.to_excel('output_file.xlsx', index=False)
+
+#2)Labelling the relavant paragraphs
+from PyPDF2 import PdfReader
+import pandas as pd
+import os
+import json
+
+# Set API key 
+os.environ["OPENAI_API_KEY"] = "your_api_key_here"
+
+# Load labeled and unlabeled data
+labeled_df = pd.read_excel("labeled_data.xlsx")
+unlabeled_df = pd.read_excel("unlabeled_data.xlsx")
+
+# Initialize system messages for labeling
+messages = [{"role": "system", "content": "Label paragraphs as 'yes' or 'no' for relevance to 'Experimental Section' or 
+             'Electrochemical Measurements'."}]
+
+# Add labeled examples to messages
+for row in labeled_df.itertuples():
+    messages += [{"role": "user", "content": f"Paragraph text"}, {"role": "assistant", "content": f"Label"}]
+
+# Iterate over unlabeled data and label paragraphs
+results = []
+for row in unlabeled_df.itertuples():
+    if not pd.isnull(row.Paragraph):
+        messages.append({"role": "user", "content": f"Paragraph text"})
+        # Generate response and append result
+        response = client.chat.completions.create(model="gpt-3.5-turbo", messages=messages)
+        results.append({"Paragraph": row.Paragraph, "Label": response.choices[0].message.content})
+        messages.append({"role": "assistant", "content": f"Response content"})
+
+# Save results to an output file
+results.to_excel('output.xlsx', index=False)
+
+#3)Generating the unified structure data
+import os
+import pandas as pd
+
+# Set API key
+os.environ["OPENAI_API_KEY"] = "your_api_key_here"
+client = OpenAI()
+
+# Load the dataset 
+df = pd.read_csv('your_file_path.csv', encoding='ISO-8859-1')
+
+# Extract relevant content (replace 'column-name' with your actual column names)
+content = df['preparation section'].values[0]
+content2 = df['electrochemical section'].values[0]
+content3 = df['overpotentials statements'].values[0]
+
+# Request summarization and extraction using the OpenAI API
+completion = client.chat.completions.create(
+  model="gpt-3.5-turbo",
+  messages=[
+    {"role": "system", "content": "You are an academic assistant, skilled in extracting key information about materials from scientific papers."},
+    {"role": "user", "content": (
+        f'Here are some content: "{content}", "{content2}", "{content3}". '
+        'Please summarize the following details in a table: materials name or chemical formula (if the name is not provided), metal source, additive, '
+        'reaction solvent (ignore those used as metal source or solvent after reaction), support of materials (not the electrode type), reaction temperature, '
+        'reaction time, reaction methods, working electrode type, electrolyte, overpotentials at a specific current density. '
+        'If any information is not provided or you are unsure, use "N/A". The table should have 11 columns, all in lowercase: '
+        '|materials name| metal source| additives| solvent| support| reaction temperature| reaction time| reaction methods| working electrode type| electrolyte| overpotentials|'
+        'If more than one material is found, summarize them separately.'
+    )}
+  ]
+)
+
+# Output the response
+print(completion.choices[0].message)
