@@ -1,0 +1,44 @@
+#Here is a simple example in our work of using Pycaret to perform the binary classification task. 
+s = setup(df_imputed, target='OPs', session_id=123)
+
+#output your train/test set
+X_train = pd.DataFrame(get_config('X_train'))
+X_train.to_excel('Your Path.xlsx')
+y_train = pd.DataFrame(get_config('y_train'))
+y_train.to_excel('Your Path.xlsx')
+X_test = pd.DataFrame(get_config('X_test'))
+X_test.to_excel('Your Path.xlsx')
+y_test = pd.DataFrame(get_config('y_test'))
+y_test.to_excel('Your Path.xlsx')
+
+best = compare_models()
+evaluate_model(best)
+pred_holdout = predict_model(best)
+new_data = df_imputed.copy().drop('OPs', axis=1)
+
+predictions = predict_model(best, data=new_data)
+predictions.to_excel('Your Path')
+
+save_model(best, 'Your Path')
+
+x = df_imputed.drop(["OPs"],axis = 1)
+explainer = shap.TreeExplainer(best)
+shap_values = explainer.shap_values(x)
+shap.summary_plot(shap_values,x,max_display=13,show = False)
+plt.savefig('Your Path',bbox_inches='tight',dpi=600)
+plt.show()
+# save SHAP values for the first class
+df_class_0 = pd.DataFrame(shap_values[0])
+df_class_0.to_excel('Your Path', index=False)
+# save SHAP values for the second class
+df_class_1 = pd.DataFrame(shap_values[1])
+df_class_1.to_excel('Your Path', index=False)
+
+#save AUC curve
+plot_model(best,plot='auc', save='Your Path')
+
+#save confusion matrix curve
+plot_model(best,plot='confusion_matrix', save='Your Path')
+
+#save feature importance
+plot_model(best, plot='feature', save='Your Path')
