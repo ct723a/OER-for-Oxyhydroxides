@@ -1,0 +1,71 @@
+#Examples of using XGBoost with Optuna
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.metrics import r2_score, mean_squared_error
+import xgboost as xgb
+import optuna
+
+data = pd.read_csv('data.csv')
+
+X = data.drop(columns=['OPs'])
+y = data['OPs']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# change your hyperparameters if necessary
+def objective(trial):
+    param = {
+        'objective': 'reg:squarederror',
+        'eval_metric': 'rmse',
+        'max_depth': trial.suggest_int('max_depth', 3, 10),
+        'learning_rate': trial.suggest_loguniform('learning_rate', 0.01, 0.3),
+        'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
+        'subsample': trial.suggest_uniform('subsample', 0.5, 1.0),
+        'colsample_bytree': trial.suggest_uniform('colsample_bytree', 0.5, 1.0),
+        'gamma': trial.suggest_loguniform('gamma', 1e-8, 1.0),
+        'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
+        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0),
+        'min_child_weight': trial.suggest_int('min_child_weight', 1, 10)
+    }
+
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    r2_scores, mse_scores = [], []
+    
+    for train_idx, val_idx in kf.split(X_train):
+        X_ktrain, X_kval = X_train.iloc[train_idx], X_train.iloc[val_idx]
+        y_ktrain, y_kval = y_train.iloc[train_idx], y_train.iloc[val_idx]
+        
+        model = xgb.XGBRegressor(**param)
+        model.fit(X_ktrain, y_ktrain, eval_set=[(X_kval, y_kval)], verbose=False)
+        
+        y_pred = model.predict(X_kval)
+        r2 = r2_score(y_kval, y_pred)
+        mse = mean_squared_error(y_kval, y_pred)
+        
+        r2_scores.append(r2)
+        mse_scores.append(mse)
+    
+    avg_r2 = np.mean(r2_scores)
+    avg_mse = np.mean(mse_scores)
+    
+    print(f'Fold R2: {avg_r2:.4f}, MSE: {avg_mse:.4f}')
+    
+    return avg_mse
+
+study = optuna.create_study(direction='minimize')
+study.optimize(objective, n_trials=50)
+
+best_params = study.best_params
+print("Best parameters: ", best_params)
+
+best_model = xgb.XGBRegressor(**best_params)
+best_model.fit(X_train, y_train)
+
+y_test_pred = best_model.predict(X_test)
+test_r2 = r2_score(y_test, y_test_pred)
+test_mse = mean_squared_error(y_test, y_test_pred)
+print(f'Test R2: {test_r2:.4f}, Test MSE: {test_mse:.4f}')
+
+predicted_vs_true = pd.DataFrame({'Real': y_test, 'Predicted': y_test_pred})
+predicted_vs_true.to_csv('predictions_vs_true.csv', index=False)
