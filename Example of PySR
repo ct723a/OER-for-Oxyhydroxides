@@ -1,0 +1,22 @@
+import numpy as np
+from pysr import PySRRegressor
+import pandas as pd
+
+data = pd.read_csv('data.csv')
+
+X = data.drop(columns=['OPs'])
+y = data['OPs']
+
+#change the parameter if necessary
+model = PySRRegressor(
+    niterations=500,                      
+    binary_operators=["+", "-", "*", "/", "^", "max", "min"],  
+    unary_operators=["sin", "cos", "exp", "log", "sqrt", "abs", "tan", "cube"], 
+    extra_sympy_mappings={},    
+    loss="loss(x, y) = (x - y)^2",  
+    populations=200                  
+)
+
+model.fit(X, y)
+
+print(model)
