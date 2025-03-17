@@ -1,0 +1,48 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import numpy as np
+from sklearn.manifold import TSNE
+
+# Load your saved embedding vectors
+df = pd.read_csv('your_saved_vectors_path')
+
+X_tsne = df[['tSNE_1', 'tSNE_2']].values
+labels = df['Label']
+
+palette = sns.color_palette("tab20", 12)  # seaborn
+
+plt.figure(figsize=(12, 12))
+
+## plot t-SNE
+for i, label in enumerate(np.unique(labels)):
+    if label == 0:
+        # label 0: 
+        plt.scatter(X_tsne[labels == label, 0], X_tsne[labels == label, 1],
+                    label='Other segments', color=palette[i % 12], s=10, alpha=0.1)  
+    else:
+        # label 1-12: 
+        plt.scatter(X_tsne[labels == label, 0], X_tsne[labels == label, 1],
+                    label=f'Example segment {label}', color=palette[i % 12], s=250, alpha=1)  
+
+plt.title('t-SNE Visualization of text segments', fontsize=28,fontfamily='Arial')
+plt.xlabel('t-SNE 1', fontsize=28,fontfamily='Arial')
+plt.ylabel('t-SNE 2', fontsize=28,fontfamily='Arial')
+
+plt.tick_params(axis='both', which='both', bottom=False, top=False,
+                left=False, right=False, labelbottom=False, labelleft=False)
+
+for spine in plt.gca().spines.values():
+    spine.set_visible(True)
+
+plt.gca().spines['bottom'].set_linewidth(1.5)  
+plt.gca().spines['left'].set_linewidth(1.5)    
+plt.gca().spines['top'].set_linewidth(1.5)    
+plt.gca().spines['right'].set_linewidth(1.5)   
+
+#plt.legend(title='Labels', loc='best', bbox_to_anchor=(0.7, 0.5), fontsize=14)
+plt.legend(loc='best', bbox_to_anchor=(0.62, 0.48), fontsize=17)
+#plt.tight_layout()
+plt.savefig('your_path', format='tiff', dpi=600, transparent=True)
+
+plt.show()
