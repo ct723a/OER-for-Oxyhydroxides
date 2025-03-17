@@ -98,7 +98,7 @@ completion = client.chat.completions.create(
         'reaction solvent (ignore those used as metal source or solvent after reaction), support of materials (not the electrode type), reaction temperature, '
         'reaction time, reaction methods, working electrode type, electrolyte, overpotentials at a specific current density. '
         'If any information is not provided or you are unsure, use "N/A". The table should have 11 columns, all in lowercase: '
-        '|materials name| metal source| additives| solvent| support| reaction temperature| reaction time| reaction methods| working electrode type| electrolyte| overpotentials|'
+        '|materials name| metal source| additives| solvent| support| reaction temperature| reaction time| reaction methods| working electrode type| electrolyte| '
         'If more than one material is found, summarize them separately.'
     )}
   ]
