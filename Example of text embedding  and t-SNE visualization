@@ -1,3 +1,102 @@
+#1)text embedding example
+from openai import OpenAI
+import pandas as pd
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
+import os
+import numpy as np
+
+# Set API key 
+os.environ["OPENAI_API_KEY"] = "your_api_key"
+client = OpenAI()
+
+# 1. read your text dataset
+input_path = r"your_text_path"
+df = pd.read_excel(input_path)
+
+# 2. ensure 'segment_columns' actually exist
+segment_columns = [col for col in df.columns if col.startswith("Segment ")]
+
+if not segment_columns:
+    raise ValueError("No Segment columns found in the dataset!")
+
+# 3. ensure each paper has the same segment and embedding vectors
+def get_embedding(text, model="text-embedding-3-small"):
+    if isinstance(text, str):  
+        text = text.replace("\n", " ")  
+        return client.embeddings.create(input=[text], model=model).data[0].embedding
+    else:
+        return [0] * your_desired_number_of_vectors  
+
+segment_embeddings = []  
+experimental_embeddings = []  
+labels = []  
+
+for i, row in df.iterrows():
+    for segment_col in segment_columns:
+        if pd.notna(row[segment_col]):  
+            segment_embeddings.append(get_embedding(row[segment_col]))
+            labels.append(0)  
+
+    if pd.notna(row['Experimental Section']):
+        experimental_embeddings.append(get_embedding(row['Experimental Section']))
+        labels.append(1) 
+
+if not segment_embeddings:
+    raise ValueError("No segment embeddings found!")
+if not experimental_embeddings:
+    raise ValueError("No experimental embeddings found!")
+
+all_embeddings = np.array(segment_embeddings + experimental_embeddings)
+all_labels = labels
+
+if len(all_embeddings) != len(all_labels):
+    raise ValueError("Mismatch between embeddings and labels!")
+
+# 4.save to excel
+experimental_embeddings_full = [None] * len(df)
+
+exp_idx = 0
+for i, row in df.iterrows():
+    if pd.notna(row['Experimental Section']):
+        experimental_embeddings_full[i] = experimental_embeddings[exp_idx]
+        exp_idx += 1
+
+df['Experimental_Embedding'] = experimental_embeddings_full
+output_path = r"your_path"
+df.to_excel(output_path, index=False)
+
+#2) Convert embedding vectors to t-SNE
+import pandas as pd
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
+import numpy as np
+
+# load embeddings
+embedding_file = r"your_path"
+df_embeddings = pd.read_csv(embedding_file)
+
+# make sure your embeddings' range
+embedding_columns = [str(i) for i in range(your_range_number)]  
+
+# make sure every column is not missing
+if not all(col in df_embeddings.columns for col in embedding_columns):
+    raise ValueError("Some embedding columns are missing in the dataset!")
+
+embeddings = df_embeddings[embedding_columns].values  
+
+# t-SNE parameters adjustment
+#tsne = TSNE(n_components=2, random_state=42, perplexity=30, learning_rate=500, n_iter=1500) 
+#tsne = TSNE(n_components=2, random_state=42, perplexity=100, learning_rate=500, n_iter=1500) 
+#tsne = TSNE(n_components=2, random_state=42, perplexity=100, learning_rate=1000, n_iter=3000) 
+embeddings_tsne = tsne.fit_transform(embeddings)
+
+# save your results
+output_tsne_path = r"your_save_path"
+df_tsne = pd.DataFrame(embeddings_tsne, columns=["tSNE_1", "tSNE_2"])
+df_tsne.to_csv(output_tsne_path, index=False)
+
+#3) t-SNE visualization
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
